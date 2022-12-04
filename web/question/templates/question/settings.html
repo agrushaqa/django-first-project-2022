@@ -1,0 +1,31 @@
+{% extends 'question/is_auth.html' %}
+
+{% block auth_content %}
+<h2> Settings </h2>
+    <p> Login: {{ user.username }}</p>
+
+     <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+     <p> Email: {{ user_form.email }}</p>
+         {% for error in user.email.errors %}
+          <p style="color: red">{{ error }}</p>
+         {% endfor %}
+     <p> Avatar
+     <img src="/avatars/{{ avatar.image }}" alt="current_avatar" height="50"
+          width="50"> </p>
+
+     {% for field in avatar_form %}
+      <p>
+        {{ field.label_tag }}<br>
+        {{ field }}
+        {% if field.help_text %}
+          <small style="color: grey">{{ field.help_text }}</small>
+        {% endif %}
+        {% for error in field.errors %}
+          <p style="color: red">{{ error }}</p>
+        {% endfor %}
+      </p>
+    {% endfor %}
+    <button type="submit">Save</button>
+  </form>
+{% endblock %}

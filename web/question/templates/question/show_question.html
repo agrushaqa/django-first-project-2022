@@ -1,0 +1,183 @@
+{% extends 'question/search.html' %}
+
+{% block title %} AskMe {% endblock %}
+{% load my_filter %}
+
+{% block auth_content %} <h2> Questions </h2>
+    Title: {{ question.title }} <br> Question: {{ question.description }}
+    <br>
+    <div> Author:
+        {{ question.author }}
+        <br>
+        Tags:
+        {% for i_tag in question.tag.all %}
+            <a href="/tag?name={{ i_tag.tag }}">{{ i_tag.tag }}</a>
+            <br>
+        {% endfor %}
+        <table cellspacing="0" cellpadding="0">
+            <tr>
+                <td>
+                    <form method="POST">
+                        {% csrf_token %}
+                        {% if question_like == True %}
+                            <input type="radio" name="question_like" id="like"
+                                   value="like" checked="">
+                        {% else %}
+                            <input type="radio" name="question_like" id="like"
+                                   value="like">
+                        {% endif %}
+                        Like: {{ count_question_like }}<br>
+                        {% if question_unlike == True %}
+                            <input type="radio" name="question_like" id="unlike"
+                                   value="unlike" checked="">
+                        {% else %}
+                            <input type="radio" name="question_like" id="unlike"
+                                   value="unlike">
+                        {% endif %}
+                        Unlike {{ count_question_unlike }}<br>
+                        <button>Save</button>
+                    </form>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <p>Answers:</p>
+    <ol>
+        {% for i_answer in page_obj %}
+            <li> Answer:
+                <table cellspacing="0" cellpadding="0">
+                    <tr>
+                        {% if question.author == user %}
+
+                            <td>
+                            The best answer: {{ i_answer.pk|vote:"3"|yesno }}
+                                <a class="btn btn-primary likebutton"
+                                   id="best{{ i_answer.pk }}"
+                                   href="#best"
+                                   role="button" data-catid="{{ i_answer.pk }}"
+                                   data-typeid="3">Best answer</a>
+                            </td>
+                            <td></tr>
+                            <tr>
+                        {% endif %}
+                        <td>
+                            Like:
+                        </td>
+                        <td> {{ i_answer.pk|vote:"2" }} <br>
+                        </td>
+                        <td>
+                        <div style="padding-left: 5px;">
+                            {% if i_answer.pk|vote:"2" == 0 %}
+                                <a class="btn btn-primary likebutton"
+                                   id="like{{ i_answer.pk }}"
+                                   href="#like{{ i_answer.pk }}"
+                                   role="button" data-catid="{{ i_answer.pk }}"
+                                   data-typeid="2">Like</a>
+                            {% else %}
+                                </td>
+                                <td>
+                                <a class="btn btn-primary likebutton"
+                                   id="like{{ i_answer.pk }}"
+                                   href="#like{{ i_answer.pk }}"
+                                   role="button" data-catid="{{ i_answer.pk }}"
+                                   data-typeid="2" style="visibility: hidden;">Like</a>
+                            {% endif %}
+                        </div>
+                            </td>
+                        </tr>
+                    <tr>
+                        <td>
+                            Unlike:
+                        </td>
+                        <td> {{ i_answer.pk|vote:"1" }}
+                        </td>
+                        <td>
+                        <div style="padding-left: 5px;">
+                            {% if i_answer.pk|vote:"1" == 0 %}
+                                <a class="btn btn-primary likebutton"
+                                   id="unlike{{ i_answer.pk }}"
+                                   href="#unlike{{ i_answer.pk }}"
+                                   role="button" data-catid="{{ i_answer.pk }}"
+                                   data-typeid="1">Unlike</a>
+                            {% else %}
+                                </td>
+                                <td>
+                                <a class="btn btn-primary likebutton"
+                                   id="unlike{{ i_answer.pk }}"
+                                   href="#unlike{{ i_answer.pk }}"
+                                   role="button" data-catid="{{ i_answer.pk }}"
+                                   data-typeid="1" style="visibility: hidden;">Unlike</a>
+                            {% endif %}
+                            </div>
+                            </td>
+                    </tr>
+                </table>
+                <br>{{ i_answer.description }}
+                <br>
+                <div> Author:
+                    {{ i_answer.author }}
+                    <br>
+                </div>
+            </li>
+        {% endfor %}
+
+    </ol>
+     <div class="pagination">
+    <span class="step-links">
+        {% if page_obj.has_previous %}
+            <a href="?page=1">&laquo; first</a>
+            <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+        {% endif %}
+
+        <span class="current">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+        </span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+        {% endif %}
+    </span>
+    </div>
+    <p>Your Answer:</p>
+    <form method="POST">
+        {% csrf_token %}
+        <div class="form-style {% if answer_form.description.errors %} error {% endif %} ">
+            {{ answer_form.description.label_tag }}
+            {{ answer_form.description.errors }}
+            {{ answer_form.description }}
+        </div>
+        <button>Post your answer</button>
+    </form>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+    <script type="text/javascript">
+        $('.likebutton').click(function () {
+            var catid, typeid;
+            catid = $(this).attr("data-catid");
+            typeid = $(this).attr("data-typeid");
+            current = $(this);
+            $.ajax(
+                {
+                    type: "GET",
+                    url: "/likepost",
+                    data: {
+                        post_id: catid,
+                        type_id: typeid
+                    },
+                    success: function (data) {
+                        {#$('#like' + catid).style.visibility = "visible";#}
+                        {#$('#unlike' + catid).style.visibility = "visible";#}
+                        like_link = document.getElementById('like' + catid);
+                        like_link.style.visibility = "visible";
+                        unlike_link = document.getElementById('unlike' + catid);
+                        unlike_link.style.visibility = "visible";
+
+                        $(current).hide();
+                        $('#best' + catid).remove();
+                        $('#message').text(data);
+                    }
+                })
+        });
+    </script>
+{% endblock %}

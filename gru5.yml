@@ -1,0 +1,47 @@
+version: '3.3'
+services:
+  web:
+    build: web
+    command: /bin/sh start
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG
+      - SECRET_KEY
+      - PG_HOST
+      - PG_PORT
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+      - EMAIL_FROM
+      - EMAIL_HOST
+      - EMAIL_HOST_USER
+      - EMAIL_HOST_PASSWORD
+      - EMAIL_PORT
+      - ALLOWED_HOSTS
+    depends_on:
+      - db
+    networks:
+      - postgres
+  db:
+    build:
+      context: ./db
+      dockerfile: Dockerfile
+    image: postgres:latest
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - PGDATA=/var/lib/pgsql/data/pgdata/data
+    ports:
+      - '5432:5432'
+    volumes:
+      - /home/artem/pg2:/var/lib/pgsql/data/pgdata
+    networks:
+      - postgres
+networks:
+  postgres:
+    driver: bridge
+volumes:
+  db:
+    driver: local
