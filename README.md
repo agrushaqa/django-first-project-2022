@@ -76,6 +76,7 @@ python manage.py test
 DEBUG=True
 SECRET_KEY='django-insecure-xxx'
 я не пользовался, но для генерации ключа предлагают сайт https://djecrety.ir/
+````
 PG_HOST=db
 PG_PORT=5432
 POSTGRES_DB='askme'
@@ -87,7 +88,7 @@ EMAIL_HOST_USER='xxx@inbox.ru'
 EMAIL_HOST_PASSWORD='xxx'
 EMAIL_PORT=587
 ALLOWED_HOSTS=*
-
+````
 Для запуска на локальной машине
 PG_HOST=localhost
 ALLOWED_HOSTS="localhost","0.0.0.0","127.0.0.1"
