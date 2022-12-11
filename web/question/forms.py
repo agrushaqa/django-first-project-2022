@@ -1,8 +1,7 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
 from django.forms import ModelForm
 
-from .models import Avatar, CreateQuestion, Tag, User
+from common.models import CreateQuestion, Tag
 
 
 class ListQuestionsForm(forms.ModelForm):
@@ -23,14 +22,6 @@ class AskQuestionForm(forms.ModelForm):
         fields = ('title', 'description')
 
 
-class SignUpForm(UserCreationForm):
-
-    class Meta:
-        model = User
-        fields = ('username', 'first_name', 'last_name', 'email', 'password1',
-                  'password2')  # '__all__'
-
-
 class TagForm(ModelForm):
     class Meta:
         model = Tag
@@ -48,15 +39,3 @@ class TagForm(ModelForm):
             current_tag.save()
             list_result.append(current_tag)
         return list_result
-
-
-class SettingsForm(ModelForm):
-    class Meta:
-        model = User
-        fields = ('email',)
-
-
-class AvatarForm(forms.ModelForm):
-    class Meta:
-        model = Avatar
-        fields = ('image',)

@@ -4,11 +4,12 @@
 {% block auth_content %}
 
     {% for i_question in page_obj %}
-        <a href="/question/{{i_question.id|cut:" "}}">
-        {{ i_question.id|upper}} {{ i_question.title|upper }}<br></a>
+        <h5><a href="/question/{{i_question.id|cut:" "}}">
+        {{ i_question.id|upper}} {{ i_question.title|upper }}<br></a></h5>
         <p style="text-align:right;">{{ i_question.author }}</p>
         <br>
-        {{ i_question.description }}
+        <blockquote class="blockquote">
+        {{ i_question.description }}</blockquote>
         {% for i_tag in i_question.tag.all %}
             <a href="/tag?name={{ i_tag.tag }}">{{ i_tag.tag }}</a>
             <br>

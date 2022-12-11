@@ -35,7 +35,7 @@
                                    value="unlike">
                         {% endif %}
                         Unlike {{ count_question_unlike }}<br>
-                        <button>Save</button>
+                        <button class=" btn btn-lg btn-primary">Save</button>
                     </form>
                 </td>
             </tr>
@@ -148,7 +148,7 @@
             {{ answer_form.description.errors }}
             {{ answer_form.description }}
         </div>
-        <button>Post your answer</button>
+        <button class=" btn btn-lg btn-primary">Post your answer</button>
     </form>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
     <script type="text/javascript">
@@ -166,13 +166,12 @@
                         type_id: typeid
                     },
                     success: function (data) {
-                        {#$('#like' + catid).style.visibility = "visible";#}
-                        {#$('#unlike' + catid).style.visibility = "visible";#}
                         like_link = document.getElementById('like' + catid);
                         like_link.style.visibility = "visible";
+                        like_link.style.display = "block";
                         unlike_link = document.getElementById('unlike' + catid);
                         unlike_link.style.visibility = "visible";
-
+                        unlike_link.style.display = "block";
                         $(current).hide();
                         $('#best' + catid).remove();
                         $('#message').text(data);

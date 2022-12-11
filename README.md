@@ -30,8 +30,14 @@ python manage.py runserver_plus 8000
 нужно придумать свой пароль 
 CREATE USER grusha WITH ENCRYPTED PASSWORD 'xxx';
 вместо 'xxx'
-docker-compose -f gru5.yml build --no-cache
-docker-compose -f gru5.yml up -d
+
+после этого выполнить 
+make prod
+или
+make up
+если пересобирать билд не надо. То есть уже выполнялась команда
+make prod
+и после этого код не менялся.
 
 p.s.
 В докере возможно использовать
@@ -93,9 +99,16 @@ DEBUG = False не работает
 просто удалите DEBUG из env
 фиксить не стал так как нашёл workaround
 2. тэги должны быть уникальны 
-3. кнопки like после второго щелчка исчезают
+3. кнопки like при щелчке счётчик меняется только при обновлении страницы
 4. сделать тесты для api 
 5. поиск не делается по содержимому (сейчас делается только по title)
 6. масштабирование (redis) сейчас проект работает напрямую с postgres
 то есть большие нагрузки может не выдержать
 7. web/start возможно git при коммите заменил переводы строк на window. Если это так это потребуется исправить.
+
+
+# requirements.txt
+## create
+pip freeze > requirements.txt
+## use
+pip install -r requirements.txt

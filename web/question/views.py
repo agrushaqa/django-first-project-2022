@@ -1,73 +1,64 @@
-from django.contrib.auth import authenticate, login
-from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
 from django.http.response import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render
-
-from .forms import (AskQuestionForm, AvatarForm, CreateAnswerForm,
-                    SettingsForm, SignUpForm, TagForm)
-from .library import popular_answers, popular_questions
+from django.views.generic import ListView
+from .forms import (AskQuestionForm, CreateAnswerForm, TagForm)
+from common.library import popular_answers, popular_questions, \
+    generate_trading, search_html
 # Create your views here.
-from .models import (AnswerVote, Avatar, CreateAnswer, CreateQuestion,
+
+from .models import (AnswerVote, CreateAnswer, CreateQuestion,
                      QuestionVote)
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic.detail import SingleObjectMixin
+from django.views import View
+from askme.settings import EMAIL_FROM
 
 
-def home(request):
-    if request.user.is_authenticated and 'searchField' in request.GET.keys() \
-            and request.GET['searchField']:
-        return HttpResponseRedirect(
-            f"/query?searchField={request.GET['searchField']}")
+class HomeRedirectView(LoginRequiredMixin, ListView):
+    login_url = '/login'
+    redirect_field_name = 'home'
 
-    else:
-        questions = popular_questions()
-        paginator = Paginator(questions, 20)  # Show 25 contacts per page.
+    def get(self, request):
+        if 'searchField' in request.GET.keys() and request.GET['searchField']:
+            return HttpResponseRedirect(
+                f"/query?searchField={request.GET['searchField']}")
+        else:
+            questions = popular_questions()
+            paginator = Paginator(questions, 20)
 
-        page_number = request.GET.get('page')
-        page_obj = paginator.get_page(page_number)
-        return search_html(request, "question/home.html",
-                           {"page_obj": page_obj})
-
-
-def search_html(request, template, context):
-    try:
-        avatar = Avatar.objects.get(user_id=request.user)
-    except Exception:
-        avatar = Avatar()
-        avatar.image = 'profile-icon-empty.png'
-    context["avatar"] = avatar
-    question_list = popular_questions()
-    context["trending"] = question_list
-    context["is_trending"] = True
-    if question_list.count() == 0:
-        context["is_trending"] = False
-    return render(request, template, context)
+            page_number = request.GET.get('page')
+            page_obj = paginator.get_page(page_number)
+            return search_html(request, "question/home.html",
+                               {"page_obj": page_obj})
 
 
-@login_required
-def list_questions(request):
-    questions = popular_questions()
-    return render(request, "question/list.html", {"form": questions})
+class TradingMixin(object):
+    def get_context_data(self, **kwargs):
+        try:
+            context = super().get_context_data(**kwargs)
+        except Exception:
+            context = {}
+        return generate_trading(self.request, context)
 
 
-def show_question(request, question_id):
-    question = CreateQuestion.objects.get(pk=question_id)
-    list_answers = popular_answers(question)
-    question_unlike = False
-    question_like = False
-    try:
-        count_question_like = QuestionVote.objects.filter(
-            question=question,
-            type_id=QuestionVote.QuestionVoteType.APPROVE).count()
-    except Exception:
-        count_question_like = 0
-    try:
-        count_question_unlike = QuestionVote.objects.filter(
-            question=question,
-            type_id=QuestionVote.QuestionVoteType.CONDEMN).count()
-    except Exception:
-        count_question_unlike = 0
-    if request.method == 'GET':
+class QListView(TradingMixin, LoginRequiredMixin, ListView):
+    login_url = '/login'
+    redirect_field_name = 'list_all_questions'
+    # queryset = popular_questions() # из-за этой строки makemigrations падала
+    # с ошибкой. В качестве решения создал get_queryset
+    context_object_name = 'form'
+    template_name = "question/list.html"
+
+    def get_queryset(self, *args, **kwargs):
+        return popular_questions()
+
+
+class ShowQuestionView(View):
+    def get(self, request, question_id):
+        question = CreateQuestion.objects.get(pk=question_id)
+        question_unlike = False
+        question_like = False
         try:
             question_vote = QuestionVote.objects.get(author=request.user,
                                                      question=question)
@@ -78,8 +69,43 @@ def show_question(request, question_id):
                 question_like = True
         except Exception:
             pass
+        answer_form = CreateAnswerForm()
+        paginator = Paginator(popular_answers(question), 30)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        return search_html(request,
+                           "question/show_question.html",
+                           {"question": question,
+                            "answer_form": answer_form,
+                            "page_obj": page_obj,
+                            "question_unlike": question_unlike,
+                            "question_like": question_like,
+                            "count_question_like": self.get_count_like(
+                                question),
+                            "count_question_unlike": self.get_count_unlike(
+                                question)
+                            })
 
-    if request.method == 'POST':
+    def get_count_like(self, question):
+        try:
+            count_question_like = QuestionVote.objects.filter(
+                question=question,
+                type_id=QuestionVote.QuestionVoteType.APPROVE).count()
+        except Exception:
+            count_question_like = 0
+        return count_question_like
+
+    def get_count_unlike(self, question):
+        try:
+            count_question_unlike = QuestionVote.objects.filter(
+                question=question,
+                type_id=QuestionVote.QuestionVoteType.CONDEMN).count()
+        except Exception:
+            count_question_unlike = 0
+        return count_question_unlike
+
+    def post(self, request, question_id):
+        question = CreateQuestion.objects.get(pk=question_id)
         if 'question_like' in request.POST:
             try:
                 question_vote = QuestionVote.objects.get(author=request.user,
@@ -89,11 +115,9 @@ def show_question(request, question_id):
                 if request.POST['question_like'] == 'unlike':
                     question_vote.type_id = \
                         QuestionVote.QuestionVoteType.CONDEMN
-                    question_unlike = True
                 if request.POST['question_like'] == 'like':
                     question_vote.type_id = \
                         QuestionVote.QuestionVoteType.APPROVE
-                    question_like = True
                 question_vote.save()
             except Exception:
                 if request.method == 'POST':
@@ -121,64 +145,115 @@ def show_question(request, question_id):
                 subject = f"There is new answer for /question/ {question_id}"
                 body = f"""
                 author:{request.user.username}
-        send new answer:
-        {request.POST['description'][:120]}
-        for your question:
-        {question.title[:120]}
-        {question.description[:120]}
-        """
+                send new answer:
+                {request.POST['description'][:120]}
+                for your question:
+                {question.title[:120]}
+                {question.description[:120]}
+                """
                 send_mail(
                     subject=subject,
                     message=body,
-                    from_email=None,
+                    from_email=EMAIL_FROM,
                     recipient_list=[question.author.email], fail_silently=False
                 )
         return HttpResponseRedirect(f"/question/{question_id}")
-    answer_form = CreateAnswerForm()
-    paginator = Paginator(list_answers, 30)  # Show 25 contacts per page.
-
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    return search_html(request,
-                       "question/show_question.html",
-                       {"question": question,
-                        "answer_form": answer_form,
-                        "page_obj": page_obj,
-                        "question_unlike": question_unlike,
-                        "question_like": question_like,
-                        "count_question_like": count_question_like,
-                        "count_question_unlike": count_question_unlike
-                        })
 
 
-@login_required
-def list_queried_tags(request):
-    if 'name' in request.GET:
-        questions = CreateQuestion.objects.filter(
+class QueryTagListView(TradingMixin, LoginRequiredMixin, SingleObjectMixin,
+                       ListView):
+    login_url = '/login'
+    redirect_field_name = 'list_questions_by_tag'
+    template_name = "question/list.html"
+    model = CreateQuestion
+    paginate_by = 20
+    context_object_name = 'form'
+
+    def get(self, request, *args, **kwargs):
+        self.object = CreateQuestion.objects.filter(
             tag__tag=request.GET['name'])
-        if questions.count() == 0:
-            return render(request, "question/not_found.html",
-                          {"query_word": request.GET['searchField']})
-        return search_html(request, "question/list.html",
-                           {"form": questions})
-    return search_html(request, "question/not_found.html",
-                       {"query_word": 'this'})
+        return super().get(request, *args, **kwargs)
+
+    def get_queryset(self, *args, **kwargs):
+        return super().get_queryset(*args, **kwargs).filter(
+            tag__tag=self.request.GET['name']
+        )
 
 
-@login_required
-def list_queried_questions(request):
-    questions = CreateQuestion.objects.filter(
-        title__contains=request.GET['searchField'])
-    if questions.count() == 0:
-        return search_html(request, "question/not_found.html",
-                           {"query_word": request.GET['searchField']})
-    return search_html(request, "question/list.html",
-                       {"form": questions})
+class QueryRequestListView(TradingMixin, LoginRequiredMixin, SingleObjectMixin,
+                           ListView):
+    login_url = '/login'
+    redirect_field_name = 'list_queried_questions'
+    template_name = "question/list.html"
+    model = CreateQuestion
+    paginate_by = 20
+    context_object_name = 'form'
+
+    def get(self, request, *args, **kwargs):
+        self.object = CreateQuestion.objects.filter(
+            title__contains=self.request.GET['searchField'])
+        return super().get(request, *args, **kwargs)
+
+    def get_queryset(self, *args, **kwargs):
+        return super().get_queryset(*args, **kwargs).filter(
+            title__contains=self.request.GET['searchField']
+        )
 
 
-@login_required
-def ask_question(request):
-    if request.method == 'GET':
+class AskMeListView(TradingMixin, LoginRequiredMixin, ListView):
+    # login_url = '/login'
+    # redirect_field_name = 'ask'
+    # paginate_by = 20
+    # template_name = "question/ask_question.html"
+    # form_class = AskQuestionForm
+    # success_url = "/ask"
+    # tag_form_class = TagForm
+    #
+    # def post(self, request):
+    #     post_data = request.POST or None
+    #     ask_form = self.form_class(post_data)
+    #     tag_form = self.tag_form_class(post_data)
+    #
+    #     if ask_form.is_valid():
+    #         self.form_save(ask_form)
+    #     if tag_form.is_valid():
+    #         tag = self.form_save(tag_form)
+    #         question = CreateQuestion(author=self.request.user,  # , tag=tag
+    #                                   title=self.request.POST['title'],
+    #                                   description=self.request.POST[
+    #                                       'description'])
+    #         question.save()
+    #         for i_tag in tag:
+    #             question.tag.add(i_tag)
+    #         questions = popular_questions()
+    #         paginator = Paginator(questions, 20)
+    #
+    #         page_number = request.GET.get('page')
+    #         page_obj = paginator.get_page(page_number)
+    #         return search_html(request, self.template_name,
+    #                            {'form': self.form_class,
+    #                             'tag_form': tag_form,
+    #                             "page_obj": page_obj})
+    #
+    # def form_save(self, form):
+    #     obj = form.save()
+    #     messages.success(self.request, "{} saved successfully".format(obj))
+    #     return obj
+    #
+    # def get(self, request, *args, **kwargs):
+    #     return self.post(request, *args, **kwargs)
+
+    # def form_valid(self, tag_form):
+    #     tag = tag_form.save()
+    #     question = CreateQuestion(
+    #                   author=self.request.user,  # , tag=tag
+    #                   title=self.request.POST['title'],
+    #                   description=self.request.POST['description'])
+    #     question.save()
+    #     for i_tag in tag:
+    #         question.tag.add(i_tag)
+
+    def get(self, request):
         form = AskQuestionForm()
         tag_form = TagForm()
         template_name = "question/ask_question.html"
@@ -190,7 +265,8 @@ def ask_question(request):
         return search_html(request, template_name,
                            {'form': form, 'tag_form': tag_form,
                             "page_obj": page_obj})
-    if request.method == 'POST':
+
+    def post(self, request):
         ask_form = AskQuestionForm(request.POST)
         tag_form = TagForm(request.POST)
         template_name = "question/ask_question.html"
@@ -213,51 +289,11 @@ def ask_question(request):
                             "page_obj": page_obj})
 
 
-def signup(request):
-    if request.method == 'POST':
-        user_form = SignUpForm(request.POST)
-        avatar_form = AvatarForm(request.POST)
-        if user_form.is_valid():
-            user = user_form.save()
-            user.refresh_from_db()
-            user.save()
-            if avatar_form.is_valid() and 'image' in request.FILES:
-                storage_file(request.FILES['image'])
-                new_image = Avatar(image=str(request.FILES['image']),
-                                   user=user)
-                new_image.save()
-            else:
-                new_image = Avatar(image="profile-icon-empty.png", user=user)
-                new_image.save()
-            raw_password = user_form.cleaned_data.get('password1')
+class LikePostView(LoginRequiredMixin, SingleObjectMixin, ListView):
+    login_url = '/login'
+    redirect_field_name = 'likepost'
 
-            # login user after signing up
-            user = authenticate(username=user.username, password=raw_password)
-            login(request, user)
-        if avatar_form.is_valid():
-            # redirect user to home page
-            return HttpResponseRedirect('/')
-    else:
-        user_form = SignUpForm()
-        avatar_form = AvatarForm()
-    return render(request, r'question/registration.html',
-                  {'form': user_form, 'avatar_form': avatar_form})
-
-
-@login_required(login_url='/')
-def test_auth(request):
-    return render(request, r'question/test.html')
-
-
-def storage_file(file):
-    with open(f'uploads/{file.name}', 'wb+') as new_file:
-        for chunk in file.chunks():
-            new_file.write(chunk)
-
-
-@login_required(login_url='/')
-def likepost(request):
-    if request.method == 'GET':
+    def get(self, request):
         answer_id = request.GET['post_id']
         answer = CreateAnswer.objects.get(pk=answer_id)
         author = request.user
@@ -286,32 +322,3 @@ def likepost(request):
                                      type_id=vote_type)
         answer_vote.save()
         return HttpResponse("Success!")
-    return HttpResponse("Request method is not a GET")
-
-
-@login_required(login_url='/')
-def settings(request):
-    if request.method == 'GET' and "searchField" in request.GET and \
-            request.GET['searchField']:
-        return HttpResponseRedirect("/query")
-    else:
-        try:
-            avatar = Avatar.objects.get(user_id=request.user)
-            if request.FILES:
-                storage_file(request.FILES['image'])
-                avatar.image = str(request.FILES['image'])
-                avatar.save()
-        except Exception:
-            pass
-        user_form = SettingsForm(data=request.POST or None,
-                                 instance=request.user)
-        if user_form.is_valid():
-            user = user_form.save()
-            user.refresh_from_db()
-            user.save()
-
-        avatar_form = AvatarForm(request)
-
-        return render(request, "question/settings.html",
-                      {"user_form": user_form, 'avatar_form': avatar_form,
-                       "avatar": avatar})
