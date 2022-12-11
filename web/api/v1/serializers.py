@@ -1,8 +1,7 @@
-from django.contrib.auth import get_user_model
-from rest_framework.serializers import ModelSerializer
-
 from common.models import CreateQuestion
+from django.contrib.auth import get_user_model
 from question.models import CreateAnswer
+from rest_framework.serializers import ModelSerializer
 
 
 class QuestionListSerializer(ModelSerializer):

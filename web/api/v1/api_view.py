@@ -1,4 +1,6 @@
 
+from common.library import popular_answers, popular_questions
+from common.models import CreateQuestion
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.authentication import BasicAuthentication
 from rest_framework.decorators import (api_view, authentication_classes,
@@ -8,8 +10,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from common.library import popular_answers, popular_questions
-from common.models import CreateQuestion
 from .serializers import (ListAnswersSerializer, QuestionListSerializer,
                           UserSerializer)
 

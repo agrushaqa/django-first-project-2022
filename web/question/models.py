@@ -1,5 +1,5 @@
-from django.db import models
 from common.models import CreateQuestion
+from django.db import models
 from user.models import User
 
 

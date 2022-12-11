@@ -1,13 +1,14 @@
-from django.contrib.auth import authenticate, login
-from django.views.generic.base import TemplateView
-from .forms import (AvatarForm, SettingsForm, SignUpForm)
-from django.shortcuts import render
 from common.library import storage_file
-from user.models import Avatar
-from django.http.response import HttpResponseRedirect
+from django.contrib.auth import authenticate, login
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic.detail import SingleObjectMixin
+from django.http.response import HttpResponseRedirect
+from django.shortcuts import render
 from django.views.generic import ListView
+from django.views.generic.base import TemplateView
+from django.views.generic.detail import SingleObjectMixin
+from user.models import Avatar
+
+from .forms import AvatarForm, SettingsForm, SignUpForm
 
 
 # Create your views here.

@@ -112,3 +112,22 @@ DEBUG = False не работает
 pip freeze > requirements.txt
 ## use
 pip install -r requirements.txt
+
+# code style
+## isort
+python -m pip install isort
+### run 
+isort .
+## mypy
+python -m pip install mypy
+### run 
+mypy .
+## flake8
+python -m pip install flake8
+### run
+flake8
+## code coverage
+pip install coverage
+### run
+coverage run C:\Users\agrusha\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.10_qbz5n2kfra8p0\LocalCache\local-packages\Python310\site-packages\behave\__main__.py
+в файле .coveragerc нужно указать исходники

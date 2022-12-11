@@ -5,11 +5,11 @@ from email.message import EmailMessage
 from itertools import chain
 
 from django.db.models import Case, Count, Q, When
-
-from question.models import AnswerVote, CreateAnswer, QuestionVote
-from .models import CreateQuestion
-from user.models import Avatar
 from django.shortcuts import render
+from question.models import AnswerVote, CreateAnswer, QuestionVote
+from user.models import Avatar
+
+from .models import CreateQuestion
 
 
 def popular_question_ids():

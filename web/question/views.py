@@ -1,18 +1,19 @@
+from askme.settings import EMAIL_FROM
+from common.library import (generate_trading, popular_answers,
+                            popular_questions, search_html)
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
 from django.http.response import HttpResponse, HttpResponseRedirect
+from django.views import View
 from django.views.generic import ListView
-from .forms import (AskQuestionForm, CreateAnswerForm, TagForm)
-from common.library import popular_answers, popular_questions, \
-    generate_trading, search_html
+from django.views.generic.detail import SingleObjectMixin
+
+from .forms import AskQuestionForm, CreateAnswerForm, TagForm
+from .models import AnswerVote, CreateAnswer, CreateQuestion, QuestionVote
+
 # Create your views here.
 
-from .models import (AnswerVote, CreateAnswer, CreateQuestion,
-                     QuestionVote)
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic.detail import SingleObjectMixin
-from django.views import View
-from askme.settings import EMAIL_FROM
 
 
 class HomeRedirectView(LoginRequiredMixin, ListView):

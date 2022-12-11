@@ -1,7 +1,6 @@
+from common.models import CreateQuestion, Tag
 from django import forms
 from django.forms import ModelForm
-
-from common.models import CreateQuestion, Tag
 
 
 class ListQuestionsForm(forms.ModelForm):
