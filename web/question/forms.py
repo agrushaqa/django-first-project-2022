@@ -1,3 +1,4 @@
+from betterforms.multiform import MultiModelForm
 from common.models import CreateQuestion, Tag
 from django import forms
 from django.forms import ModelForm
@@ -38,3 +39,10 @@ class TagForm(ModelForm):
             current_tag.save()
             list_result.append(current_tag)
         return list_result
+
+
+class AskMeMultiForm(MultiModelForm):
+    form_classes = {
+            'ask_form': AskQuestionForm,
+            'tag_form': TagForm,
+        }

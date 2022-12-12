@@ -5,15 +5,15 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
 from django.http.response import HttpResponse, HttpResponseRedirect
+from django.shortcuts import redirect
 from django.views import View
-from django.views.generic import ListView
+from django.views.generic import CreateView, ListView
 from django.views.generic.detail import SingleObjectMixin
 
-from .forms import AskQuestionForm, CreateAnswerForm, TagForm
+from .forms import AskMeMultiForm, AskQuestionForm, CreateAnswerForm, TagForm
 from .models import AnswerVote, CreateAnswer, CreateQuestion, QuestionVote
 
 # Create your views here.
-
 
 
 class HomeRedirectView(LoginRequiredMixin, ListView):
@@ -201,93 +201,48 @@ class QueryRequestListView(TradingMixin, LoginRequiredMixin, SingleObjectMixin,
         )
 
 
+class AskmeMultiFormView(TradingMixin, LoginRequiredMixin, CreateView):
+    form_class = AskMeMultiForm
+    redirect_field_name = 'ask'
+    success_url = "/ask"
+    login_url = '/login'
+    template_name = "question/ask_question_multi_form.html"
+
+    def form_valid(self, form):
+        tag = form['tag_form'].save()
+        question = CreateQuestion(
+                author=self.request.user,
+                title=self.request.POST['ask_form-title'],
+                description=self.request.POST['ask_form-description'])
+        question.save()
+        for i_tag in tag:
+            question.tag.add(i_tag)
+        return redirect(self.success_url)
+
+
 class AskMeListView(TradingMixin, LoginRequiredMixin, ListView):
-    # login_url = '/login'
-    # redirect_field_name = 'ask'
-    # paginate_by = 20
-    # template_name = "question/ask_question.html"
-    # form_class = AskQuestionForm
-    # success_url = "/ask"
-    # tag_form_class = TagForm
-    #
-    # def post(self, request):
-    #     post_data = request.POST or None
-    #     ask_form = self.form_class(post_data)
-    #     tag_form = self.tag_form_class(post_data)
-    #
-    #     if ask_form.is_valid():
-    #         self.form_save(ask_form)
-    #     if tag_form.is_valid():
-    #         tag = self.form_save(tag_form)
-    #         question = CreateQuestion(author=self.request.user,  # , tag=tag
-    #                                   title=self.request.POST['title'],
-    #                                   description=self.request.POST[
-    #                                       'description'])
-    #         question.save()
-    #         for i_tag in tag:
-    #             question.tag.add(i_tag)
-    #         questions = popular_questions()
-    #         paginator = Paginator(questions, 20)
-    #
-    #         page_number = request.GET.get('page')
-    #         page_obj = paginator.get_page(page_number)
-    #         return search_html(request, self.template_name,
-    #                            {'form': self.form_class,
-    #                             'tag_form': tag_form,
-    #                             "page_obj": page_obj})
-    #
-    # def form_save(self, form):
-    #     obj = form.save()
-    #     messages.success(self.request, "{} saved successfully".format(obj))
-    #     return obj
-    #
-    # def get(self, request, *args, **kwargs):
-    #     return self.post(request, *args, **kwargs)
+    tag_form_class = TagForm
+    ask_form_class = AskQuestionForm
 
-    # def form_valid(self, tag_form):
-    #     tag = tag_form.save()
-    #     question = CreateQuestion(
-    #                   author=self.request.user,  # , tag=tag
-    #                   title=self.request.POST['title'],
-    #                   description=self.request.POST['description'])
-    #     question.save()
-    #     for i_tag in tag:
-    #         question.tag.add(i_tag)
-
-    def get(self, request):
-        form = AskQuestionForm()
-        tag_form = TagForm()
-        template_name = "question/ask_question.html"
-        questions = popular_questions()
-        paginator = Paginator(questions, 20)  # Show 25 contacts per page.
-
-        page_number = request.GET.get('page')
-        page_obj = paginator.get_page(page_number)
-        return search_html(request, template_name,
-                           {'form': form, 'tag_form': tag_form,
-                            "page_obj": page_obj})
+    def get(self, request, *args, **kwargs):
+        return self.post(request, *args, **kwargs)
 
     def post(self, request):
-        ask_form = AskQuestionForm(request.POST)
-        tag_form = TagForm(request.POST)
+        post_data = request.POST or None
+        ask_form = self.ask_form_class(post_data)
+        tag_form = self.tag_form_class(post_data)
         template_name = "question/ask_question.html"
         if ask_form.is_valid() and tag_form.is_valid():
             tag = tag_form.save()
-            question = CreateQuestion(author=request.user,  # , tag=tag
+            question = CreateQuestion(author=request.user,
                                       title=request.POST['title'],
                                       description=request.POST['description'])
             question.save()
             for i_tag in tag:
                 question.tag.add(i_tag)
             return HttpResponseRedirect("/ask")
-        questions = popular_questions()
-        paginator = Paginator(questions, 20)
-
-        page_number = request.GET.get('page')
-        page_obj = paginator.get_page(page_number)
         return search_html(request, template_name,
-                           {'form': ask_form, 'tag_form': tag_form,
-                            "page_obj": page_obj})
+                           {'form': ask_form, 'tag_form': tag_form})
 
 
 class LikePostView(LoginRequiredMixin, SingleObjectMixin, ListView):
