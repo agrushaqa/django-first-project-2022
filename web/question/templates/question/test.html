@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hello</title>
+</head>
+<body>
+ Hello, {{ user.username }}
+<p> user.is_authenticated: {{ user.is_authenticated }}</p>
+{% if user.is_authenticated %}
+    <p> You are log in as {{ user.first_name }} {{ user.last_name }}</p>
+{% endif %}
+</body>
+</html>

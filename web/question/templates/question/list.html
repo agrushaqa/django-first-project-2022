@@ -1,0 +1,25 @@
+{% extends 'question/search.html' %}
+
+{% block title %} AskMe {% endblock %}
+
+{% block auth_content %} <h2> Questions </h2>
+<ol>
+    {% for i_question in form %}
+
+    <li>Title: {{i_question.title}} <br> Question: {{i_question.description}}
+        <br>
+        <div> Author:
+        {{i_question.author}}
+        <br>
+        Tags:
+        {% for i_tag in i_question.tag.all %}
+            <a href="/tag?name={{i_tag.tag}}">{{i_tag.tag}}</a>
+            <br>
+        {% endfor %}
+    </div> </li>
+
+
+
+{% endfor %}
+</ol>
+{% endblock %}

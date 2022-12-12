@@ -1,0 +1,76 @@
+{% extends 'question/base.html' %}
+
+{% block top %}
+
+    <a href="/">
+        <img src="/static/logo/logo.jpg" alt="logo" height="3%" width="3%"
+             style="float:left"></a>
+    <form id="searchForm" style="text-align:center;">
+
+        <label for="sea">Search for : </label>
+        <input type="search" name="searchField"/>
+        <input type="submit" value="Search" class=" btn btn-small btn-primary"/>
+    </form>
+
+    {% if user.is_authenticated %}
+        <div style="float:right; padding: 30px" >
+        <nav class="navbar bg-light">
+        <ul class="nav" >
+
+
+           <li class="nav-item"> <a href="/settings"><img src="/avatars/{{ avatar.image }}"
+                             alt="current_avatar"
+                 height="40"   width="40" ></a></li>
+                <li class="nav-item"><a href="/settings" class="nav-link"
+                >{{ user.username }}</a></li>
+                <li class="nav-item"><a href="{% url 'ask' %}" class="nav-link">Ask question</a></li>
+                <li class="nav-item"><a href="{% url 'logout' %}" class="nav-link">Log Out</a></li>
+                <li class="nav-item"><a href="/signup" class="nav-link">Регистрация</a></li>
+            </ul></nav>
+
+
+
+        </div>
+        <br>
+        <br>
+        <br>
+        <br>
+        <hr>
+    {% else %}
+        <p style="text-align:right;"><a href="/signup">Регистрация</a></p>
+        <p style="text-align:center;">Вы не залогинены
+            <a href="{% url 'login' %}">Log In</a></p>
+    {% endif %}
+
+
+{% endblock %}
+{% block content %}
+    {% if user.is_authenticated %}
+        <div style="display:block; width:100%;">
+        <div style="width:50%; float: left; display: inline-block;">
+            {% block auth_content %}
+        {% endblock %}
+        </div>
+            <div style="width:50%; float: left; display: inline-block;
+            padding-left: 15px" class="list-group">
+
+            <p style="text-align:center;">Trending:</p>
+
+            {% if is_trending %}
+{#                <ol class="list-group list-group-numbered">#}
+                {% for j_question in trending %}
+{#                    <li class="list-group-item d-flex justify-content-between align-items-start">#}
+                    <a href="/question/{{j_question.id|cut:" "}}" class="list-group-item list-group-item-action active">
+        {{ j_question.id|upper}} {{ j_question.title|upper }}<br></a>
+{#                </li>#}
+                {% empty %}
+                <li>Sorry, there aren't questions.</li>
+                {% endfor %}
+{#                </ol>#}
+                {% else %}
+                <li>Sorry, there aren't questions.</li>
+                {% endif %}
+        </div>
+        </div>
+    {% endif %}
+{% endblock %}
