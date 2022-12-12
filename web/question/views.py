@@ -221,6 +221,10 @@ class AskmeMultiFormView(TradingMixin, LoginRequiredMixin, CreateView):
 
 
 class AskMeListView(TradingMixin, LoginRequiredMixin, ListView):
+    # TODO класс не используется, я его сохранил на память, чтобы знать что
+    #  можно вызывывать post через get для сокращения кода
+    login_url = '/login'
+    redirect_field_name = 'ask'
     tag_form_class = TagForm
     ask_form_class = AskQuestionForm
 
