@@ -68,8 +68,7 @@ def lib_send_email(email, subject, body, port=587):
 
         context = ssl.create_default_context()
 
-        with smtplib.SMTP(os.environ.get('EMAIL_HOST'), port=port) as \
-                smtp:
+        with smtplib.SMTP(os.environ.get('EMAIL_HOST'), port=port) as smtp:
             smtp.starttls(context=context)
             smtp.login(msg["From"], os.environ.get('EMAIL_HOST_PASSWORD'))
             smtp.send_message(msg)

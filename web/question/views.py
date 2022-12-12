@@ -65,8 +65,9 @@ class ShowQuestionView(View):
                                                      question=question)
             if question_vote.type_id == QuestionVote.QuestionVoteType.CONDEMN:
                 question_unlike = True
-            elif question_vote.type_id == \
-                    QuestionVote.QuestionVoteType.APPROVE:
+            elif question_vote.type_id == (
+                    QuestionVote.QuestionVoteType.APPROVE
+                    ):
                 question_like = True
         except Exception:
             pass
@@ -111,14 +112,17 @@ class ShowQuestionView(View):
             try:
                 question_vote = QuestionVote.objects.get(author=request.user,
                                                          question=question)
-                question_vote.type_id = \
+                question_vote.type_id = (
                     QuestionVote.QuestionVoteType.INDIFFERENCE
+                    )
                 if request.POST['question_like'] == 'unlike':
-                    question_vote.type_id = \
+                    question_vote.type_id = (
                         QuestionVote.QuestionVoteType.CONDEMN
+                        )
                 if request.POST['question_like'] == 'like':
-                    question_vote.type_id = \
+                    question_vote.type_id = (
                         QuestionVote.QuestionVoteType.APPROVE
+                        )
                 question_vote.save()
             except Exception:
                 if request.method == 'POST':
