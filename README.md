@@ -12,6 +12,16 @@ Deploy. Далее успешность определяется code review.
 
 # Настройка
 ## Установка 
+apt-get install git
+apt install make
+apt-get install curl
+install docker:
+https://docs.docker.com/engine/install/ubuntu/
+https://download.docker.com/linux/ubuntu/dists/jammy/pool/stable/amd64/
+
+sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+
 ### Локально:
 pip install -r requirements.txt
 выполнить миграции в скрипте /web/start
